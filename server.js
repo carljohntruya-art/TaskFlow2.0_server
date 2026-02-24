@@ -19,6 +19,35 @@ const { errorHandler, notFound } = require('./middleware/errorMiddleware');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Build the list of allowed origins from the environment variable.
+// FRONTEND_ORIGIN can be a comma-separated list, e.g.:
+//   FRONTEND_ORIGIN=https://taskflow2-0.vercel.app,https://task-flow2-0-three.vercel.app
+const rawOrigin = process.env.FRONTEND_ORIGIN || env.FRONTEND_ORIGIN || '';
+const allowedOrigins = rawOrigin
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean)
+  .concat(['http://localhost:3000', 'http://localhost:5173']); // always allow local dev
+
+console.log('[CORS] Allowed origins:', allowedOrigins);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (server-to-server, curl, Postman, etc.)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      callback(new Error(`CORS policy: Origin '${origin}' is not allowed.`));
+    }
+  },
+  credentials: true,        // Required for cookies cross-domain
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
 // Security Middleware
 app.use(helmet({
   contentSecurityPolicy: {
@@ -27,18 +56,14 @@ app.use(helmet({
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'", process.env.FRONTEND_ORIGIN || env.FRONTEND_ORIGIN]
+      connectSrc: ["'self'", ...allowedOrigins]
     }
   }
 }));
 
-// CORS configuration - Allow frontend origin only
-app.use(cors({
-  origin: process.env.FRONTEND_ORIGIN || env.FRONTEND_ORIGIN,
-  credentials: true,        // Required for cookies cross-domain
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// CORS — must come before routes so preflight OPTIONS requests are handled
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // handle preflight for all routes explicitly
 
 // Body parser & Cookie parser
 app.use(express.json());
@@ -50,12 +75,12 @@ if (env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
-// Rate Limiting for Auth routes (max 10 req/15min)
+// Rate Limiting — login & register only (not /me or /logout)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per `window` (here, per 15 minutes)
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes' }
 });
 
@@ -91,7 +116,7 @@ const startServer = async () => {
     await Task.ensureTableExists();
     console.log('Database tables verified/created');
 
-    // Add Error Middlewares
+    // Add Error Middlewares (must be after routes)
     app.use(notFound);
     app.use(errorHandler);
 
