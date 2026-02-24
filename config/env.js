@@ -14,6 +14,12 @@ for (const envVar of requiredEnvVars) {
   }
 }
 
+// JWT secret must be strong enough
+if (process.env.JWT_SECRET.length < 32) {
+  console.error('JWT_SECRET must be at least 32 characters long.');
+  process.exit(1);
+}
+
 if (!process.env.DATABASE_URL && (!process.env.DB_HOST || !process.env.DB_USER || !process.env.DB_PASSWORD || !process.env.DB_NAME)) {
   console.error(`Error: Database configuration is missing. Provide DATABASE_URL or DB config.`);
   process.exit(1);

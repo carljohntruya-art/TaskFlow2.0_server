@@ -20,7 +20,17 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Security Middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'", process.env.FRONTEND_ORIGIN || env.FRONTEND_ORIGIN]
+    }
+  }
+}));
 
 // CORS configuration - Allow frontend origin only
 app.use(cors({
@@ -49,7 +59,15 @@ const authLimiter = rateLimit({
   message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes' }
 });
 
-app.use('/api/auth/', authLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
+const taskLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { success: false, message: 'Too many requests' }
+});
+app.use('/api/tasks/', taskLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -87,3 +105,13 @@ const startServer = async () => {
 };
 
 startServer();
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
