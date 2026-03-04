@@ -114,9 +114,38 @@ const getMe = async (req, res, next) => {
   }
 };
 
+const getAllUsers = async (req, res, next) => {
+  try {
+    const users = await User.findAll();
+    return successResponse(res, 200, 'Users retrieved successfully', users);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateProfile = async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    if (!name || name.trim() === '') {
+      return errorResponse(res, 400, 'Name is required');
+    }
+    const updatedUser = await User.updateProfile(req.user.id, name.trim());
+    return successResponse(res, 200, 'Profile updated successfully', {
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
   logout,
   getMe,
+  getAllUsers,
+  updateProfile,
 };

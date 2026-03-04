@@ -13,6 +13,7 @@ const Task = require('./models/taskModel');
 
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
 
@@ -97,6 +98,10 @@ app.use('/api/tasks/', taskLimiter);
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// Static files
+app.use('/uploads', express.static('uploads'));
 
 // Root Endpoint
 app.get('/', (req, res) => {

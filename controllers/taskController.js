@@ -3,13 +3,13 @@ const { successResponse, errorResponse } = require('../utils/responseUtils');
 
 const createTask = async (req, res, next) => {
   try {
-    const { title, description, status, priority, dueDate } = req.body;
+    const { title, description, status, priority, dueDate, imageUrl } = req.body;
     
     // Sanitize in simple terms (since we'll use express-validator too)
     const secureTitle = title.trim();
     const secureDescription = description ? description.trim() : null;
 
-    const task = await Task.create(req.user.id, secureTitle, secureDescription, status, priority, dueDate);
+    const task = await Task.create(req.user.id, secureTitle, secureDescription, status, priority, dueDate, imageUrl);
 
     return successResponse(res, 201, 'Task created successfully', task);
   } catch (error) {
@@ -48,6 +48,17 @@ const updateTask = async (req, res, next) => {
   }
 };
 
+const getTaskById = async (req, res, next) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return errorResponse(res, 404, 'Task not found');
+    if (task.user_id !== req.user.id) return errorResponse(res, 403, 'Unauthorized');
+    return successResponse(res, 200, 'Task retrieved', task);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const deleteTask = async (req, res, next) => {
   try {
     const taskId = req.params.id;
@@ -72,6 +83,7 @@ const deleteTask = async (req, res, next) => {
 module.exports = {
   createTask,
   getTasks,
+  getTaskById,
   updateTask,
   deleteTask,
 };

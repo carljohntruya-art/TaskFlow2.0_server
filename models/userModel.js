@@ -23,6 +23,21 @@ class User {
     return rows[0];
   }
 
+  static async findAll() {
+    const query = `SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC`;
+    const { rows } = await db.query(query);
+    return rows;
+  }
+
+  static async updateProfile(id, name) {
+    const query = `
+      UPDATE users SET name = $1 
+      WHERE id = $2 RETURNING id, name, email, role, created_at
+    `;
+    const { rows } = await db.query(query, [name, id]);
+    return rows[0];
+  }
+
   static async ensureTableExists() {
     const query = `
       CREATE TABLE IF NOT EXISTS users (

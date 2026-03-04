@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { createTask, getTasks, updateTask, deleteTask } = require('../controllers/taskController');
+const { createTask, getTasks, getTaskById, updateTask, deleteTask } = require('../controllers/taskController');
 const { validate } = require('../middleware/validateMiddleware');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -21,6 +21,8 @@ router.post('/', [
 
 router.get('/', getTasks);
 
+router.get('/:id', getTaskById);
+
 router.patch('/:id', [
   validate([
     body('title').optional().trim().escape(),
@@ -34,3 +36,4 @@ router.patch('/:id', [
 router.delete('/:id', deleteTask);
 
 module.exports = router;
+

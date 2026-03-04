@@ -1,13 +1,13 @@
 const db = require('../config/db');
 
 class Task {
-  static async create(userId, title, description, status, priority, dueDate) {
+  static async create(userId, title, description, status, priority, dueDate, imageUrl) {
     const query = `
-      INSERT INTO tasks (id, user_id, title, description, status, priority, due_date, created_at, updated_at)
-      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW())
+      INSERT INTO tasks (id, user_id, title, description, status, priority, due_date, image_url, created_at, updated_at)
+      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
       RETURNING *
     `;
-    const values = [userId, title, description, status || 'todo', priority || 'medium', dueDate || null];
+    const values = [userId, title, description, status || 'todo', priority || 'medium', dueDate || null, imageUrl || null];
     const { rows } = await db.query(query, values);
     return rows[0];
   }
@@ -25,7 +25,7 @@ class Task {
   }
 
   static async update(id, userId, updates) {
-    const { title, description, status, priority, dueDate } = updates;
+    const { title, description, status, priority, dueDate, imageUrl } = updates;
     
     // Allow partial updates
     const query = `
@@ -36,11 +36,12 @@ class Task {
         status = COALESCE($3, status),
         priority = COALESCE($4, priority),
         due_date = COALESCE($5, due_date),
+        image_url = COALESCE($6, image_url),
         updated_at = NOW()
-      WHERE id = $6 AND user_id = $7
+      WHERE id = $7 AND user_id = $8
       RETURNING *
     `;
-    const values = [title, description, status, priority, dueDate, id, userId];
+    const values = [title, description, status, priority, dueDate, imageUrl, id, userId];
     const { rows } = await db.query(query, values);
     return rows[0];
   }
@@ -61,6 +62,7 @@ class Task {
         status VARCHAR(20) DEFAULT 'todo' CHECK (status IN ('todo', 'in_progress', 'done')),
         priority VARCHAR(20) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
         due_date DATE,
+        image_url TEXT DEFAULT NULL,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       )
