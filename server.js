@@ -71,6 +71,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Static uploads — placed BEFORE all route middleware so auth never intercepts it.
+// Also applies route-scoped CORS so browsers on Railway/Vercel can load images.
+app.use('/uploads', cors(corsOptions), express.static('uploads'));
+
 // HTTP request logger
 if (env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
@@ -100,8 +104,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// Static files
-app.use('/uploads', express.static('uploads'));
+// NOTE: Static uploads middleware was moved above routes to fix 401 & CORS issues.
 
 // Root Endpoint
 app.get('/', (req, res) => {

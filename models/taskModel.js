@@ -41,7 +41,17 @@ class Task {
       WHERE id = $7 AND user_id = $8
       RETURNING *
     `;
-    const values = [title, description, status, priority, dueDate, imageUrl, id, userId];
+    // Coerce undefined → null so PostgreSQL never receives an undefined binding
+    const values = [
+      title        !== undefined ? title       : null,
+      description  !== undefined ? description : null,
+      status       !== undefined ? status      : null,
+      priority     !== undefined ? priority    : null,
+      dueDate      !== undefined ? dueDate     : null,
+      imageUrl     !== undefined ? imageUrl    : null,
+      id,
+      userId
+    ];
     const { rows } = await db.query(query, values);
     return rows[0];
   }

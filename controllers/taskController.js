@@ -9,10 +9,13 @@ const createTask = async (req, res, next) => {
     const secureTitle = title.trim();
     const secureDescription = description ? description.trim() : null;
 
+    // authMiddleware attaches the full DB user row, so req.user.id is the correct field
     const task = await Task.create(req.user.id, secureTitle, secureDescription, status, priority, dueDate, imageUrl);
 
     return successResponse(res, 201, 'Task created successfully', task);
   } catch (error) {
+    console.error('createTask error:', error.message);
+    console.error('createTask stack:', error.stack);
     next(error);
   }
 };
@@ -44,6 +47,8 @@ const updateTask = async (req, res, next) => {
     const updatedTask = await Task.update(taskId, req.user.id, updates);
     return successResponse(res, 200, 'Task updated successfully', updatedTask);
   } catch (error) {
+    console.error('updateTask error:', error.message);
+    console.error('updateTask stack:', error.stack);
     next(error);
   }
 };
@@ -76,6 +81,8 @@ const deleteTask = async (req, res, next) => {
     
     return successResponse(res, 200, 'Task deleted successfully', { id: deleted.id });
   } catch (error) {
+    console.error('deleteTask error:', error.message);
+    console.error('deleteTask stack:', error.stack);
     next(error);
   }
 };
