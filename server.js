@@ -128,6 +128,13 @@ const startServer = async () => {
     app.use(notFound);
     app.use(errorHandler);
 
+    const fs = require('fs');
+    const uploadsDir = './uploads';
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+      console.log('Uploads directory created');
+    }
+
     app.listen(PORT, () => {
       console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
     });
